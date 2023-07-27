@@ -18,6 +18,17 @@ variable "nginx_name" {
   default = "nginx_to_curl"
 }
 
+variable "vault_image" {
+  type = string
+  default = "hashicorp/vault:latest"
+  description = "vault image"
+}
+
+variable "vault_name" {
+  type = string
+  default = "terraform_vault"
+}
+
 provider "docker" {
   host = "unix:///home/ormazd/.docker/desktop/docker.sock"
 }
@@ -38,5 +49,23 @@ resource "docker_container" "nginx_to_curl" {
 
     provisioner "local-exec" {
         command = "curl localhost:800 > index.html"
+    }
+}
+
+resource docker_image "vault_image" {
+    name = var.vault_image
+    keep_locally = false
+}
+
+resource "docker_container" "vault_container" {
+    image = docker_image.vault_image.image_id
+    name = var.vault_name
+    env = ["VAULT_DEV_ROOT_TOKEN_ID=myroot", "VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:1222"]
+    ports {
+        internal = 1222
+        external = 1222
+    }
+    capabilities {
+        add = ["IPC_LOCK"]
     }
 }
